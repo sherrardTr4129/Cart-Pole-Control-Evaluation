@@ -1,0 +1,5 @@
+testresources
+keras
+tensorflow
+gym
+pyglet
