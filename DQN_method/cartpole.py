@@ -24,6 +24,9 @@ MAX_EPISODES = 1000
 
 class DQNSolver:
     def __init__(self, observation_space, action_space):
+        """
+        initialize DQN manager object
+        """
         self.exploration_rate = EXPLORATION_MAX
 
         self.action_space = action_space
@@ -36,9 +39,17 @@ class DQNSolver:
         self.model.compile(loss="mse", optimizer=Adam(lr=LEARNING_RATE))
 
     def remember(self, state, action, reward, next_state, done):
+        """
+        append current enviornment state to memory
+        """
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
+        """
+        take action based on current observed state.
+
+        state -> observed state of the enviornment
+        """
         if np.random.rand() < self.exploration_rate:
             return random.randrange(self.action_space)
         q_values = self.model.predict(state)
