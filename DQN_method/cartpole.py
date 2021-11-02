@@ -1,6 +1,7 @@
 import random
 import gym
 import numpy as np
+import argparse
 from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense
@@ -8,8 +9,10 @@ from tensorflow.keras.optimizers import Adam
 
 from score_logger import ScoreLogger
 
+# define enviornment name
 ENV_NAME = "CartPole-v1"
 
+# define various hyper-parameters
 GAMMA = 0.95
 LEARNING_RATE = 0.001
 
@@ -20,10 +23,11 @@ EXPLORATION_MAX = 1.0
 EXPLORATION_MIN = 0.01
 EXPLORATION_DECAY = 0.995
 
-MAX_EPISODES = 1000
+# define number of training episodes
+MAX_EPISODES = 400
 
 class DQNSolver:
-    def __init__(self, observation_space, action_space):
+    def __init__(self, observation_space, action_space, model_filename=None):
         """
         initialize DQN manager object
         """
@@ -32,11 +36,17 @@ class DQNSolver:
         self.action_space = action_space
         self.memory = deque(maxlen=MEMORY_SIZE)
 
-        self.model = Sequential()
-        self.model.add(Dense(24, input_shape=(observation_space,), activation="relu"))
-        self.model.add(Dense(24, activation="relu"))
-        self.model.add(Dense(self.action_space, activation="linear"))
-        self.model.compile(loss="mse", optimizer=Adam(lr=LEARNING_RATE))
+        # if no model file_name was provided, make new model
+        if(model_filename is None):
+            self.model = Sequential()
+            self.model.add(Dense(24, input_shape=(observation_space,), activation="relu"))
+            self.model.add(Dense(24, activation="relu"))
+            self.model.add(Dense(self.action_space, activation="linear"))
+            self.model.compile(loss="mse", optimizer=Adam(lr=LEARNING_RATE))
+
+        # otherwise load model from file
+        else:
+            self.model = keras.models.load_model(model_filename)
 
     def remember(self, state, action, reward, next_state, done):
         """
@@ -145,5 +155,73 @@ def cartpole_training(render_training_image = False):
             # perform replay process
             dqn_solver.experience_replay()
 
+def cartpole_inference(model_file_name):
+    """
+    this function allows a trained DQN model to be run
+    within the simulation enviornment. A disturbance will be
+    introduced during the episode and the performance 
+    of the system will be analysed.
+    """
+    # set up enviornment for cart-pole
+    env = gym.make(ENV_NAME)
+
+    # set up observation and action space instnaces
+    observation_space = env.observation_space.shape[0]
+    action_space = env.action_space.n
+
+    # set up DQN objects
+    dqn_solver = DQNSolver(observation_space, action_space, model_file_name)
+    step = 0
+
+    # begin episode
+    while True:
+        step += 1
+
+        # render training if flag was set
+        if(render_training_image):
+            env.render()
+
+        # get action from current state using DQN model
+        action = dqn_solver.act(state)
+
+        # advance enviornment state by taking action
+        state_next, reward, terminal, info = env.step(action)
+
+        # modify reward as positive or negative depending on outcome of movement
+        # (i.e. did we lose balance?)
+        reward = reward if not terminal else -reward
+
+        # get next state
+        state_next = np.reshape(state_next, [1, observation_space])
+
+        # append current state, action and reward to memory
+        dqn_solver.remember(state, action, reward, state_next, terminal)
+
+        # increment state
+        state = state_next
+
+        # if we have lose control, end the episode
+        # and log data
+        if terminal:
+            print("Run: " + str(run) + ", exploration: " + str(dqn_solver.exploration_rate) + ", score: " + str(step))
+            break
+
+        # perform replay process
+        dqn_solver.experience_replay()
+
 if __name__ == "__main__":
-    cartpole_training()
+    # set up arg parser
+    parser = argparse.ArgumentParser(description='Cartpole DQN Model Traning and Evaluation')
+    parser.add_argument("-t", "--train", type=bool, action="store", required=True, help="set this flag to True to train the model, or False to run inference.")
+    parser.add_argument("-m", "--model", type=str, action="store", help="filename for model to be loaded (default: model/cartpole_model)")
+
+    # parse arguments
+    args = parser.parse_args()
+
+    # train model, or run inference based on user input
+    if(args.train):
+        cartpole_training()
+
+    else:
+        cartpole_inference(args.model)
+
