@@ -5,7 +5,7 @@ import gym
 import numpy as np
 import argparse
 from collections import deque
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 
@@ -48,7 +48,7 @@ class DQNSolver:
 
         # otherwise load model from file
         else:
-            self.model = keras.models.load_model(model_filename)
+            self.model = load_model(model_filename)
 
     def remember(self, state, action, reward, next_state, done):
         """
