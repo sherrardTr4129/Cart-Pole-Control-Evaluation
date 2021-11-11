@@ -9,8 +9,6 @@ from keras.models import Sequential, load_model
 from keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 
-from score_logger import ScoreLogger
-
 # define enviornment name
 ENV_NAME = "CartPole-v1"
 
@@ -96,9 +94,6 @@ def cartpole_training(render_training_image = False):
     # set up enviornment for cart-pole
     env = gym.make(ENV_NAME)
 
-    # set up score logging object
-    score_logger = ScoreLogger(ENV_NAME)
-
     # set up observation and action space instnaces
     observation_space = env.observation_space.shape[0]
     action_space = env.action_space.n
@@ -151,7 +146,6 @@ def cartpole_training(render_training_image = False):
             # and log data
             if terminal:
                 print("Run: " + str(run) + ", exploration: " + str(dqn_solver.exploration_rate) + ", score: " + str(step))
-                score_logger.add_score(step, run)
                 break
 
             # perform replay process
