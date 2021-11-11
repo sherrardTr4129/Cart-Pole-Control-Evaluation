@@ -1,4 +1,6 @@
 import random
+import csv
+from datetime import datetime
 import gym
 import numpy as np
 import argparse
@@ -24,7 +26,7 @@ EXPLORATION_MIN = 0.01
 EXPLORATION_DECAY = 0.995
 
 # define number of training episodes
-MAX_EPISODES = 400
+MAX_EPISODES = 500
 
 class DQNSolver:
     def __init__(self, observation_space, action_space, model_filename=None):
@@ -155,7 +157,36 @@ def cartpole_training(render_training_image = False):
             # perform replay process
             dqn_solver.experience_replay()
 
-def cartpole_inference(model_file_name):
+def write_state_data(state_dict, filename, time_step):
+    """
+    this function writes out data within
+    state_dict to a csv file with name 'filename'
+    """
+    with open(filename, "w", newline='') as csvfile:
+        csv_writer = csv.writer(csvfile, delimiter=",", quotechar="|", quoting=csv.QUOTE_MINIMAL)
+        csv_writer.writerow(["time (s)", "cart_pos (m)", "cart_vel (m/s)", "pole_ang (rad)", "pole_ang_vel (rad/s)"])
+
+        # extract data
+        cart_pos_list = state_dict["cart_pos"]
+        cart_vel_list = state_dict["cart_vel"]
+        pole_ang_list = state_dict["pole_ang"]
+        pole_ang_vel_list = state_dict["pole_ang_vel"]
+
+        # all lists should be same lenght, so just choose one for
+        # indexing
+        list_len = len(cart_pos_list)
+        cur_time = 0
+
+        # write out individual data points
+        for i in range(list_len):
+            csv_writer.writerow([cur_time, cart_pos_list[i], 
+                cart_vel_list[i], pole_ang_list[i], pole_ang_vel_list[i]])
+
+            # increment time 
+            cur_time += time_step
+
+
+def cartpole_inference(model_file_name, render_training_image=True):
     """
     this function allows a trained DQN model to be run
     within the simulation enviornment. A disturbance will be
@@ -172,6 +203,11 @@ def cartpole_inference(model_file_name):
     # set up DQN objects
     dqn_solver = DQNSolver(observation_space, action_space, model_file_name)
     step = 0
+    state = env.reset()
+    state = np.reshape(state, [1, observation_space])
+
+    # make new state dictionary
+    state_dict = {"cart_pos": list(), "cart_vel": list(), "pole_ang": list(), "pole_ang_vel": list()}
 
     # begin episode
     while True:
@@ -183,6 +219,13 @@ def cartpole_inference(model_file_name):
 
         # get action from current state using DQN model
         action = dqn_solver.act(state)
+
+        # update state_dict
+        state_unpack = state[0]
+        state_dict["cart_pos"].append(state_unpack[0])
+        state_dict["cart_vel"].append(state_unpack[0])
+        state_dict["pole_ang"].append(state_unpack[0])
+        state_dict["pole_ang_vel"].append(state_unpack[3])
 
         # advance enviornment state by taking action
         state_next, reward, terminal, info = env.step(action)
@@ -203,7 +246,17 @@ def cartpole_inference(model_file_name):
         # if we have lose control, end the episode
         # and log data
         if terminal:
-            print("Run: " + str(run) + ", exploration: " + str(dqn_solver.exploration_rate) + ", score: " + str(step))
+            now = datetime.now()
+            dt_string = now.strftime("%d_%m_%Y-%H-%M-%S")
+            filename = "run_%s.csv" % dt_string
+
+            print("run ended")
+
+            # write data to disk
+            write_state_data(state_dict, filename, env.tau)
+
+            print("wrote data to %s" % filename)
+
             break
 
         # perform replay process
@@ -212,16 +265,20 @@ def cartpole_inference(model_file_name):
 if __name__ == "__main__":
     # set up arg parser
     parser = argparse.ArgumentParser(description='Cartpole DQN Model Traning and Evaluation')
-    parser.add_argument("-t", "--train", type=bool, action="store", required=True, help="set this flag to True to train the model, or False to run inference.")
+    parser.add_argument("-t", "--train", dest="toTrainOrNot", action="store_true", help="set this flag to train the model")
+    parser.add_argument("-i", "--infer", dest="toTrainOrNot", action="store_false", help="set this flag to run inference.")
     parser.add_argument("-m", "--model", type=str, action="store", help="filename for model to be loaded (default: model/cartpole_model)")
 
     # parse arguments
+    parser.set_defaults(toTrainOrNot=True)
     args = parser.parse_args()
 
     # train model, or run inference based on user input
-    if(args.train):
+    if(args.toTrainOrNot):
+        print("training model...")
         cartpole_training()
 
-    else:
+    elif(not args.toTrainOrNot):
+        print("running inference...")
         cartpole_inference(args.model)
 
