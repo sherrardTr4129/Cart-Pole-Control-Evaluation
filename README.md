@@ -17,7 +17,7 @@ To train the model, run the following command in a terminal.
 python3 cartpole.py --train
 ```
 
-** NOTE: ** Make sure to run the script from within the DQN\_method directory. The script writes data to a local directory in said directory structure using relative pathnames.
+**NOTE:** Make sure to run the script from within the DQN\_method directory. The script writes data to a local directory in said directory structure using relative pathnames.
 ### Running Inference
 To run inference using the trained model, run the following command in the terminal:
 
@@ -31,10 +31,12 @@ Again, please run this from within the DQN\_method directory. The above script i
 python3 cartpole.py --infer --model <model_path>
 ```
 
+In either case, once inference is complete and the simulation terminates, the state data obtained over the course of the simulation will be saved to a csv file in the DQN\_method directory
+
 ## State-Space Control Solution (MATLAB)
 
 ## Credits:
 
-The cart-pole DQN setup was extended from code found (here)[https://github.com/gsurma/cartpole].
+The cart-pole DQN setup was extended from code found [here](https://github.com/gsurma/cartpole).
 
 The State-Space base simulink simulation model was extended from:
