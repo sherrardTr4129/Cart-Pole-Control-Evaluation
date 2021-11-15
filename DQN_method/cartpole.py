@@ -58,7 +58,7 @@ class DQNSolver:
         """
         take action based on current observed state.
 
-        state -> observed state of the enviornment
+        state -> observed state of the environment
         """
         if np.random.rand() < self.exploration_rate:
             return random.randrange(self.action_space)
