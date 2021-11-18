@@ -14,7 +14,7 @@ pip3 install -r DQN_method/requirements.txt
 To train the model, run the following command in a terminal.
 
 ```bash
-python3 cartpole.py --train
+python3 cartpole.py --train --dest <model_save_path> --episodes <num_episodes>
 ```
 
 **NOTE:** Make sure to run the script from within the DQN\_method directory. The script writes data to a local directory in said directory structure using relative pathnames.
@@ -22,13 +22,7 @@ python3 cartpole.py --train
 To run inference using the trained model, run the following command in the terminal:
 
 ```bash
-python3 cartpole.py --infer
-```
-
-Again, please run this from within the DQN\_method directory. The above script invocation assumes the model being used for inference is located at: DQN\_method/model/. If you want to change that location, you can re-run the above command as seen below:
-
-```bash
-python3 cartpole.py --infer --model <model_path>
+python3 cartpole.py --infer --model <model_path> --iters <iter_number>
 ```
 
 In either case, once inference is complete and the simulation terminates, the state data obtained over the course of the simulation will be saved to a csv file in the DQN\_method directory
