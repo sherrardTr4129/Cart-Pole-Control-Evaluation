@@ -20,11 +20,11 @@ MEMORY_SIZE = 1000000
 BATCH_SIZE = 20
 
 EXPLORATION_MAX = 1.0
-EXPLORATION_MIN = 0.01
-EXPLORATION_DECAY = 0.995
+EXPLORATION_MIN = 0.05
+EXPLORATION_DECAY = 0.99995
 
 # define number of training episodes
-MAX_EPISODES = 500
+MAX_EPISODES = 2500
 
 class DQNSolver:
     def __init__(self, observation_space, action_space, model_filename=None):
@@ -80,13 +80,14 @@ class DQNSolver:
         self.exploration_rate = max(EXPLORATION_MIN, self.exploration_rate)
 
 
-def cartpole_training(render_training_image = False):
+def cartpole_training(dest="model/cartpole_model", render_training_image = False):
     """
     this function performs episodic training of the 
     cart-pole DQN model using the Open AI Gym enviornment.
     A copy of the model will be saved to "model/cartpole_model".
 
     params:
+        dest (str): file location to save model
         render_training_image (bool): should the episode be visualized?
     returns:
         None
@@ -106,7 +107,7 @@ def cartpole_training(render_training_image = False):
     while True:
         # save model once we've reached MAX_EPISODES
         if(run >= MAX_EPISODES):
-            dqn_solver.model.save("model/cartpole_model")
+            dqn_solver.model.save(dest)
             break
 
         # reset enviornment before episode start
@@ -151,14 +152,23 @@ def cartpole_training(render_training_image = False):
             # perform replay process
             dqn_solver.experience_replay()
 
-def write_state_data(state_dict, filename, time_step):
+def write_state_data(state_dict, filename, time_step, run, first):
     """
     this function writes out data within
     state_dict to a csv file with name 'filename'
+
+    params:
+        state_dict: dictionary containing state space data
+        filename (str): csv filename to write to
+        time_step (float): time in between each measurment
+        run (int): the run number we are on
+        first (bool): bool indicating first run or not
     """
-    with open(filename, "w", newline='') as csvfile:
+    with open(filename, "a", newline='') as csvfile:
         csv_writer = csv.writer(csvfile, delimiter=",", quotechar="|", quoting=csv.QUOTE_MINIMAL)
-        csv_writer.writerow(["time (s)", "cart_pos (m)", "cart_vel (m/s)", "pole_ang (rad)", "pole_ang_vel (rad/s)"])
+
+        if(first):
+            csv_writer.writerow(["run number", "time (s)", "cart_pos (m)", "cart_vel (m/s)", "pole_ang (rad)", "pole_ang_vel (rad/s)"])
 
         # extract data
         cart_pos_list = state_dict["cart_pos"]
@@ -173,19 +183,22 @@ def write_state_data(state_dict, filename, time_step):
 
         # write out individual data points
         for i in range(list_len):
-            csv_writer.writerow([cur_time, cart_pos_list[i], 
+            csv_writer.writerow([run, cur_time, cart_pos_list[i], 
                 cart_vel_list[i], pole_ang_list[i], pole_ang_vel_list[i]])
 
             # increment time 
             cur_time += time_step
 
-
-def cartpole_inference(model_file_name, render_training_image=True):
+def cartpole_inference(model_file_name, num_iters, render_training_image=True):
     """
     this function allows a trained DQN model to be run
     within the simulation enviornment. A disturbance will be
     introduced during the episode and the performance 
     of the system will be analysed.
+
+    params:
+        model_file_name (str): the filename to load the model from
+        num_iters (int): number of iterations to run inference for
     """
     # set up enviornment for cart-pole
     env = gym.make(ENV_NAME)
@@ -196,72 +209,83 @@ def cartpole_inference(model_file_name, render_training_image=True):
 
     # set up DQN objects
     dqn_solver = DQNSolver(observation_space, action_space, model_file_name)
-    step = 0
-    state = env.reset()
-    state = np.reshape(state, [1, observation_space])
 
-    # make new state dictionary
-    state_dict = {"cart_pos": list(), "cart_vel": list(), "pole_ang": list(), "pole_ang_vel": list()}
+    # set up file name
+    now = datetime.now()
+    dt_string = now.strftime("%d_%m_%Y-%H-%M-%S")
+    filename = "run_%s.csv" % dt_string
 
-    # begin episode
-    while True:
-        step += 1
+    # set flag for first run 
+    first = True
 
-        # render training if flag was set
-        if(render_training_image):
-            env.render()
+    for episode in range(num_iters):
 
-        # get action from current state using DQN model
-        action = dqn_solver.act(state)
+        # make new state dictionary
+        state_dict = {"cart_pos": list(), "cart_vel": list(), "pole_ang": list(), "pole_ang_vel": list()}
+        step = 0
+        state = env.reset()
+        state = np.reshape(state, [1, observation_space])
 
-        # update state_dict
-        state_unpack = state[0]
-        state_dict["cart_pos"].append(state_unpack[0])
-        state_dict["cart_vel"].append(state_unpack[0])
-        state_dict["pole_ang"].append(state_unpack[0])
-        state_dict["pole_ang_vel"].append(state_unpack[3])
+        # begin episode
+        while True:
+            step += 1
 
-        # advance enviornment state by taking action
-        state_next, reward, terminal, info = env.step(action)
+            # render training if flag was set
+            if(render_training_image):
+                env.render()
 
-        # modify reward as positive or negative depending on outcome of movement
-        # (i.e. did we lose balance?)
-        reward = reward if not terminal else -reward
+            # get action from current state using DQN model
+            action = dqn_solver.act(state)
 
-        # get next state
-        state_next = np.reshape(state_next, [1, observation_space])
+            # update state_dict
+            state_unpack = state[0]
+            state_dict["cart_pos"].append(state_unpack[0])
+            state_dict["cart_vel"].append(state_unpack[0])
+            state_dict["pole_ang"].append(state_unpack[0])
+            state_dict["pole_ang_vel"].append(state_unpack[3])
 
-        # append current state, action and reward to memory
-        dqn_solver.remember(state, action, reward, state_next, terminal)
+            # advance enviornment state by taking action
+            state_next, reward, terminal, info = env.step(action)
 
-        # increment state
-        state = state_next
+            # modify reward as positive or negative depending on outcome of movement
+            # (i.e. did we lose balance?)
+            reward = reward if not terminal else -reward
 
-        # if we have lose control, end the episode
-        # and log data
-        if terminal:
-            now = datetime.now()
-            dt_string = now.strftime("%d_%m_%Y-%H-%M-%S")
-            filename = "run_%s.csv" % dt_string
+            # get next state
+            state_next = np.reshape(state_next, [1, observation_space])
 
-            print("run ended")
+            # append current state, action and reward to memory
+            dqn_solver.remember(state, action, reward, state_next, terminal)
 
-            # write data to disk
-            write_state_data(state_dict, filename, env.tau)
+            # increment state
+            state = state_next
 
-            print("wrote data to %s" % filename)
+            # if we have lose control, end the episode
+            # and log data
+            if terminal:
+                print("run ended")
 
-            break
+                # write data to disk
+                write_state_data(state_dict, filename, env.tau, episode, first)
 
-        # perform replay process
-        dqn_solver.experience_replay()
+                print("wrote data to %s" % filename)
+
+                # set first flag to false
+                first = False
+
+                break
+
+            # perform replay process
+            dqn_solver.experience_replay()
 
 if __name__ == "__main__":
     # set up arg parser
     parser = argparse.ArgumentParser(description='Cartpole DQN Model Traning and Evaluation')
     parser.add_argument("-t", "--train", dest="toTrainOrNot", action="store_true", help="set this flag to train the model")
+    parser.add_argument("-d", "--dest", type=str, action="store", help="model save location")
     parser.add_argument("-i", "--infer", dest="toTrainOrNot", action="store_false", help="set this flag to run inference.")
     parser.add_argument("-m", "--model", type=str, action="store", help="filename for model to be loaded (default: model/cartpole_model)")
+    parser.add_argument("-n", "--iter", type=int, action="store", help="number of times to run inference")
 
     # parse arguments
     parser.set_defaults(toTrainOrNot=True)
@@ -270,9 +294,14 @@ if __name__ == "__main__":
     # train model, or run inference based on user input
     if(args.toTrainOrNot):
         print("training model...")
-        cartpole_training()
+        print("will save model to: %s", args.dest)
+        cartpole_training(args.dest)
 
     elif(not args.toTrainOrNot):
         print("running inference...")
-        cartpole_inference(args.model)
+        
+        if(args.iter is None):
+            print("you must provide number of iterations! (set --iter flag)")
+        else: 
+            cartpole_inference(args.model, args.iter, True)
 
