@@ -42,7 +42,7 @@ class DQNSolver:
             self.model.add(Dense(24, input_shape=(observation_space,), activation="relu"))
             self.model.add(Dense(24, activation="relu"))
             self.model.add(Dense(self.action_space, activation="linear"))
-            self.model.compile(loss="mse", optimizer=Adam(lr=LEARNING_RATE))
+            self.model.compile(loss="mse", optimizer=Adam(learning_rate=LEARNING_RATE))
 
         # otherwise load model from file
         else:
