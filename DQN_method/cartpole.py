@@ -4,6 +4,7 @@ from datetime import datetime
 import gym
 import numpy as np
 import argparse
+import os
 from collections import deque
 from keras.models import Sequential, load_model
 from keras.layers import Dense
@@ -21,10 +22,9 @@ BATCH_SIZE = 20
 
 EXPLORATION_MAX = 1.0
 EXPLORATION_MIN = 0.05
-EXPLORATION_DECAY = 0.99995
+EXPLORATION_DECAY = 0.9995
 
 # define number of training episodes
-MAX_EPISODES = 2500
 
 class DQNSolver:
     def __init__(self, observation_space, action_space, model_filename=None):
@@ -80,7 +80,7 @@ class DQNSolver:
         self.exploration_rate = max(EXPLORATION_MIN, self.exploration_rate)
 
 
-def cartpole_training(dest="model/cartpole_model", render_training_image = False):
+def cartpole_training(max_episodes, dest, render_training_image=False):
     """
     this function performs episodic training of the 
     cart-pole DQN model using the Open AI Gym enviornment.
@@ -88,6 +88,7 @@ def cartpole_training(dest="model/cartpole_model", render_training_image = False
 
     params:
         dest (str): file location to save model
+        max_episodes (int): number of training episodes
         render_training_image (bool): should the episode be visualized?
     returns:
         None
@@ -106,7 +107,7 @@ def cartpole_training(dest="model/cartpole_model", render_training_image = False
     # start episodic training
     while True:
         # save model once we've reached MAX_EPISODES
-        if(run >= MAX_EPISODES):
+        if(run >= max_episodes):
             dqn_solver.model.save(dest)
             break
 
@@ -284,7 +285,8 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--train", dest="toTrainOrNot", action="store_true", help="set this flag to train the model")
     parser.add_argument("-d", "--dest", type=str, action="store", help="model save location")
     parser.add_argument("-i", "--infer", dest="toTrainOrNot", action="store_false", help="set this flag to run inference.")
-    parser.add_argument("-m", "--model", type=str, action="store", help="filename for model to be loaded (default: model/cartpole_model)")
+    parser.add_argument("-m", "--model", type=str, action="store", help="filename for model to be loaded for inference")
+    parser.add_argument("-e", "--episodes", type=int, action="store", help="number of episodes for training")
     parser.add_argument("-n", "--iter", type=int, action="store", help="number of times to run inference")
 
     # parse arguments
@@ -294,8 +296,14 @@ if __name__ == "__main__":
     # train model, or run inference based on user input
     if(args.toTrainOrNot):
         print("training model...")
-        print("will save model to: %s", args.dest)
-        cartpole_training(args.dest)
+        print("will save model to: %s" % args.dest)
+
+        if(args.episodes is None):
+            print("must provide number of episodes for training! (--episodes flag)")
+        if(not os.path.isdir(args.dest)):
+            print("model save path is invalid! Please fix and try again (--model flag)")
+        else:
+            cartpole_training(args.episodes, args.dest)
 
     elif(not args.toTrainOrNot):
         print("running inference...")
@@ -304,4 +312,3 @@ if __name__ == "__main__":
             print("you must provide number of iterations! (set --iter flag)")
         else: 
             cartpole_inference(args.model, args.iter, True)
-
