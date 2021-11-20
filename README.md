@@ -22,7 +22,7 @@ python3 cartpole.py --train --dest <model_save_path> --episodes <num_episodes>
 To run inference using the trained model, run the following command in the terminal:
 
 ```bash
-python3 cartpole.py --infer --model <model_path> --iters <iter_number>
+python3 cartpole.py --infer --model <model_path> --iter <iter_number>
 ```
 
 In either case, once inference is complete and the simulation terminates, the state data obtained over the course of the simulation will be saved to a csv file in the DQN\_method directory
