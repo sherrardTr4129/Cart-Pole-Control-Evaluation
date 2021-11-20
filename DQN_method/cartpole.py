@@ -1,6 +1,5 @@
 import random
 import csv
-from datetime import datetime
 import gym
 import numpy as np
 import argparse
@@ -190,7 +189,7 @@ def write_state_data(state_dict, filename, time_step, run, first):
             # increment time 
             cur_time += time_step
 
-def cartpole_inference(model_file_name, num_iters, render_training_image=True):
+def cartpole_inference(model_file_name, num_iters, csv_file_loc, render_training_image=True):
     """
     this function allows a trained DQN model to be run
     within the simulation enviornment. A disturbance will be
@@ -200,6 +199,8 @@ def cartpole_inference(model_file_name, num_iters, render_training_image=True):
     params:
         model_file_name (str): the filename to load the model from
         num_iters (int): number of iterations to run inference for
+        csv_file_loc (str): file path for CSV file used in data writing
+        render_training_image (bool): render training image or not.
     """
     # set up enviornment for cart-pole
     env = gym.make(ENV_NAME)
@@ -210,11 +211,6 @@ def cartpole_inference(model_file_name, num_iters, render_training_image=True):
 
     # set up DQN objects
     dqn_solver = DQNSolver(observation_space, action_space, model_file_name)
-
-    # set up file name
-    now = datetime.now()
-    dt_string = now.strftime("%d_%m_%Y-%H-%M-%S")
-    filename = "run_%s.csv" % dt_string
 
     # set flag for first run 
     first = True
@@ -267,9 +263,9 @@ def cartpole_inference(model_file_name, num_iters, render_training_image=True):
                 print("run ended")
 
                 # write data to disk
-                write_state_data(state_dict, filename, env.tau, episode, first)
+                write_state_data(state_dict, csv_file_loc, env.tau, episode, first)
 
-                print("wrote data to %s" % filename)
+                print("wrote data to %s" % csv_file_loc)
 
                 # set first flag to false
                 first = False
@@ -279,7 +275,7 @@ def cartpole_inference(model_file_name, num_iters, render_training_image=True):
             # perform replay process
             dqn_solver.experience_replay()
 
-if __name__ == "__main__":
+def main():
     # set up arg parser
     parser = argparse.ArgumentParser(description='Cartpole DQN Model Traning and Evaluation')
     parser.add_argument("-t", "--train", dest="toTrainOrNot", action="store_true", help="set this flag to train the model")
@@ -288,6 +284,7 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--model", type=str, action="store", help="filename for model to be loaded for inference")
     parser.add_argument("-e", "--episodes", type=int, action="store", help="number of episodes for training")
     parser.add_argument("-n", "--iter", type=int, action="store", help="number of times to run inference")
+    parser.add_argument("-o", "--output", type=str, action="store", help="CSV file to write inference data to")
 
     # parse arguments
     parser.set_defaults(toTrainOrNot=True)
@@ -300,8 +297,13 @@ if __name__ == "__main__":
 
         if(args.episodes is None):
             print("must provide number of episodes for training! (--episodes flag)")
+            return -1
+        if(args.dest is None):
+            print("model save path is None! Please set it and try again (--model flag)")
+            return -1
         if(not os.path.isdir(args.dest)):
             print("model save path is invalid! Please fix and try again (--model flag)")
+            return -1
         else:
             cartpole_training(args.episodes, args.dest)
 
@@ -310,5 +312,12 @@ if __name__ == "__main__":
         
         if(args.iter is None):
             print("you must provide number of iterations! (set --iter flag)")
+            return -1
+        if(args.output is None):
+            print("you must specify a CSV file for inference data writing! (set --otuput flag)")
+            return -1
         else: 
-            cartpole_inference(args.model, args.iter, True)
+            cartpole_inference(args.model, args.iter, args.output, True)
+
+if(__name__ == "__main__"):
+    main()
