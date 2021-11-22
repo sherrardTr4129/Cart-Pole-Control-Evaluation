@@ -53,16 +53,21 @@ class DQNSolver:
         """
         self.memory.append((state, action, reward, next_state, done))
 
-    def act(self, state):
+    def act(self, state, in_training=True):
         """
         take action based on current observed state.
 
         state -> observed state of the enviornment
+        training -> set to True if training, False if running inference
         """
-        if np.random.rand() < self.exploration_rate:
-            return random.randrange(self.action_space)
-        q_values = self.model.predict(state)
-        return np.argmax(q_values[0])
+        if in_training:
+            if np.random.rand() < self.exploration_rate:
+                return random.randrange(self.action_space)
+            q_values = self.model.predict(state)
+            return np.argmax(q_values[0])
+        else:
+            q_values = self.model.predict(state)
+            return np.argmax(q_values[0])
 
     def experience_replay(self):
         if len(self.memory) < BATCH_SIZE:
@@ -232,7 +237,7 @@ def cartpole_inference(model_file_name, num_iters, csv_file_loc, render_training
                 env.render()
 
             # get action from current state using DQN model
-            action = dqn_solver.act(state)
+            action = dqn_solver.act(state, False)
 
             # update state_dict
             state_unpack = state[0]
@@ -269,11 +274,7 @@ def cartpole_inference(model_file_name, num_iters, csv_file_loc, render_training
 
                 # set first flag to false
                 first = False
-
                 break
-
-            # perform replay process
-            dqn_solver.experience_replay()
 
 def main():
     # set up arg parser
@@ -299,10 +300,10 @@ def main():
             print("must provide number of episodes for training! (--episodes flag)")
             return -1
         if(args.dest is None):
-            print("model save path is None! Please set it and try again (--model flag)")
+            print("model save path is None! Please set it and try again (--dest flag)")
             return -1
         if(not os.path.isdir(args.dest)):
-            print("model save path is invalid! Please fix and try again (--model flag)")
+            print("model save path is invalid! Please fix and try again (--dest flag)")
             return -1
         else:
             cartpole_training(args.episodes, args.dest)
@@ -310,11 +311,14 @@ def main():
     elif(not args.toTrainOrNot):
         print("running inference...")
         
+        if(args.model is None):
+            print("model load path is None! Please set and try again (--model flag)")
+            return -1
         if(args.iter is None):
             print("you must provide number of iterations! (set --iter flag)")
             return -1
         if(args.output is None):
-            print("you must specify a CSV file for inference data writing! (set --otuput flag)")
+            print("you must specify a CSV file for inference data writing! (set --output flag)")
             return -1
         else: 
             cartpole_inference(args.model, args.iter, args.output, True)
