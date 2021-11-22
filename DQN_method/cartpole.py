@@ -302,9 +302,6 @@ def main():
         if(args.dest is None):
             print("model save path is None! Please set it and try again (--dest flag)")
             return -1
-        if(not os.path.isdir(args.dest)):
-            print("model save path is invalid! Please fix and try again (--dest flag)")
-            return -1
         else:
             cartpole_training(args.episodes, args.dest)
 
