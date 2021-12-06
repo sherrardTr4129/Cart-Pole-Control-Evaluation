@@ -242,8 +242,8 @@ def cartpole_inference(model_file_name, num_iters, csv_file_loc, render_training
             # update state_dict
             state_unpack = state[0]
             state_dict["cart_pos"].append(state_unpack[0])
-            state_dict["cart_vel"].append(state_unpack[0])
-            state_dict["pole_ang"].append(state_unpack[0])
+            state_dict["cart_vel"].append(state_unpack[1])
+            state_dict["pole_ang"].append(state_unpack[2])
             state_dict["pole_ang_vel"].append(state_unpack[3])
 
             # advance enviornment state by taking action
