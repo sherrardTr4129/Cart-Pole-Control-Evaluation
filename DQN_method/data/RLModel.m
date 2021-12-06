@@ -1,10 +1,14 @@
 classdef RLModel
     properties
         data
-        allPos
-        avgPos
-        avgPosAll
-        stdPos
+        allPolePos
+        allCartPos
+        avgPolePos
+        avgPolePosAll
+        avgCartPos
+        avgCartPosAll
+        stdPolePos
+        stdCartPos
         minTime
         maxTime
         avgTimeToFail
@@ -15,37 +19,67 @@ classdef RLModel
         function obj = RLModel(inCSV)
             tbl = readtable(inCSV);
             obj.data = obj.separateRuns(tbl);
-            [obj.minTime, obj.maxTime, obj.allPos, obj.avgPos, obj.stdPos] = obj.averagePolePositionMin();
+            [obj.minTime, obj.maxTime, obj.allPolePos, obj.avgPolePos, obj.stdPolePos] = obj.averagePolePositionMin();
+            [obj.allCartPos, obj.avgCartPos, obj.stdCartPos] = obj.averageCartPositionMin();
             obj.avgTimeToFail = obj.averageTimeToFail();
-            obj.avgPosAll = obj.averagePolePositionMax();
+            obj.avgPolePosAll = obj.averagePolePositionMax();
         end
         
-        %% Plot every run in obj.data
-        function plotAllRuns(obj)
+        %% Plot every run pole pos in obj.data
+        function plotAll_PolePos(obj)
             for i = 1:length(obj.data)
                 plot(obj.data{i}.time_s_, obj.data{i}.pole_ang_rad_)
                 hold on
             end      
         end
         
-        %% Plot average of all runs (0-minTime)
-        function plotAveragePosMin(obj)
+        %% Plot every run cart pos in obj.data
+        function plotAll_CartPos(obj)
+            for i = 1:length(obj.data)
+                plot(obj.data{i}.time_s_, obj.data{i}.cart_pos_m_)
+                hold on
+            end      
+        end
+        
+        %% Plot average pole pos of all runs (0-minTime)
+        function plotAveragePolePosMin(obj)
             lw = 2;
-            plot(obj.minTime, obj.avgPos, "LineWidth", lw)
+            plot(obj.minTime, obj.avgPolePos, "LineWidth", lw)
+        end
+        
+        %% Plot average cart pos of all runs (0-minTime)
+        function plotAverageCartPosMin(obj)
+            lw = 2;
+            plot(obj.minTime, obj.avgCartPos, "LineWidth", lw)
         end
         
         %% Plot average of all runs (0-maxTime)
         function plotAveragePosMax(obj)
             lw = 2;
-            plot(obj.maxTime, obj.avgPosAll, "LineWidth", lw)
+            plot(obj.maxTime, obj.avgPolePosAll, "LineWidth", lw)
         end
         
         %% Plot box plot of position
-        function plotBoxplotPos(obj, skip)
+        function plotBoxplotPolePos(obj, skip)
             
             j = 1;
-            for i = 1:skip:size(obj.allPos, 2)
-                pos(:,j) = obj.allPos(:,i);
+            for i = 1:skip:size(obj.allPolePos, 2)
+                pos(:,j) = obj.allPolePos(:,i);
+                t(j) = obj.minTime(i);
+                j = j+1;
+            end
+            lbl  = t;
+
+
+            boxplot(pos, 'Labels', lbl);
+        end
+        
+        %% Plot box plot of position
+        function plotBoxplotCartPos(obj, skip)
+            
+            j = 1;
+            for i = 1:skip:size(obj.allCartPos, 2)
+                pos(:,j) = obj.allCartPos(:,i);
                 t(j) = obj.minTime(i);
                 j = j+1;
             end
@@ -68,7 +102,7 @@ classdef RLModel
             end
         end
         
-        %% Find average pole position and assign to obj.avgPos
+        %% Find average pole position and assign to obj.avgPolePos
         function [mintime, maxtime, all_pos, pos_avg, pos_std] = averagePolePositionMin(obj)
             indat = obj.data;
             
@@ -99,8 +133,22 @@ classdef RLModel
             all_pos = pos_temp';
         end
         
+        %% Find average pole position and assign to obj.avgPolePos
+        function [all_pos, pos_avg, pos_std] = averageCartPositionMin(obj)
+            indat = obj.data;
+            len = length(obj.minTime);
+            
+            for i = 1:length(indat)
+                pos_temp(:,i) = indat{i}.cart_pos_m_(1:len);
+            end
+            
+            pos_avg = mean(pos_temp, 2);
+            pos_std = std(pos_temp, 0, 2);
+            all_pos = pos_temp';
+        end
+        
         %% Find average position for every time step
-        function avgPosAll = averagePolePositionMax(obj)
+        function avgPolePosAll = averagePolePositionMax(obj)
             
             for i = 1:length(obj.maxTime)
                 sum = 0;
@@ -113,7 +161,7 @@ classdef RLModel
                     end
                 end
                 
-                avgPosAll(i) = sum / n;
+                avgPolePosAll(i) = sum / n;
             end
         end
         

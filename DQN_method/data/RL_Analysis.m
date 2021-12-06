@@ -7,6 +7,7 @@ csv_250 = 'model_250_data.csv';
 csv_500 = 'model_500_data.csv';
 csv_2500 = 'model_2500_data.csv';
 numIters = [50, 100, 250, 500, 2500];
+showTitle = true;
 
 Model50 = RLModel(csv_50);
 Model100 = RLModel(csv_100);
@@ -16,38 +17,94 @@ Model2500 = RLModel(csv_2500);
 fignum = 0;
 
 %% Plot all runs
-Model50.plotAllRuns()
+fignum = fignum + 1;
+Model50.plotAll_PolePos()
 xlabel("Time (s)", 'FontSize', 14)
 ylabel("Pole Angle (radians)", 'FontSize', 14)
+if showTitle
+    title('50 Iteration Model: All Pole Positions', 'FontSize', 14)
+end
+hold off
+
+%% Plot all runs
+fignum = fignum + 1;
+Model50.plotAll_CartPos()
+xlabel("Time (s)", 'FontSize', 14)
+ylabel("Cart Position (m)", 'FontSize', 14)
+if showTitle
+    title('50 Iteration Model: All Cart Positions', 'FontSize', 14)
+end
 hold off
 
 %%
-Model100.plotAllRuns()
+fignum = fignum + 1;
+Model100.plotAll_PolePos()
 xlabel("Time (s)", 'FontSize', 14)
 ylabel("Pole Angle (radians)", 'FontSize', 14)
+if showTitle
+    title('100 Iteration Model: All Pole Positions', 'FontSize', 14)
+end
+hold off
+
+%% Plot all runs
+fignum = fignum + 1;
+Model100.plotAll_CartPos()
+xlabel("Time (s)", 'FontSize', 14)
+ylabel("Cart Position (m)", 'FontSize', 14)
+if showTitle
+    title('100 Iteration Model: All Cart Positions', 'FontSize', 14)
+end
 hold off
 
 %%
-Model500.plotAllRuns()
+fignum = fignum + 1;
+Model500.plotAll_PolePos()
 xlabel("Time (s)", 'FontSize', 14)
 ylabel("Pole Angle (radians)", 'FontSize', 14)
+if showTitle
+    title('500 Iteration Model: All Pole Positions', 'FontSize', 14)
+end
+hold off
+
+%% Plot all runs
+fignum = fignum + 1;
+Model500.plotAll_CartPos()
+xlabel("Time (s)", 'FontSize', 14)
+ylabel("Cart Position (m)", 'FontSize', 14)
+if showTitle
+    title('500 Iteration Model: All Cart Positions', 'FontSize', 14)
+end
 hold off
 
 %%
-Model2500.plotAllRuns()
+fignum = fignum + 1;
+Model2500.plotAll_PolePos()
 xlabel("Time (s)", 'FontSize', 14)
 ylabel("Pole Angle (radians)", 'FontSize', 14)
+if showTitle
+    title('2500 Iteration Model: All Pole Positions', 'FontSize', 14)
+end
+hold off
+
+%% Plot all runs
+fignum = fignum + 1;
+Model100.plotAll_CartPos()
+xlabel("Time (s)", 'FontSize', 14)
+ylabel("Cart Position (m)", 'FontSize', 14)
+if showTitle
+    title('2500 Iteration Model: All Cart Positions', 'FontSize', 14)
+end
 hold off
 
 %% Plot Average Position 
 fignum = fignum + 1;
 figure(fignum)
-Model50.plotAveragePosMin();
+Model50.plotAveragePolePosMin();
 hold on
-Model100.plotAveragePosMin();
-Model250.plotAveragePosMin();
-Model500.plotAveragePosMin();
-Model2500.plotAveragePosMin();
+Model100.plotAveragePolePosMin();
+Model250.plotAveragePolePosMin();
+Model500.plotAveragePolePosMin();
+Model2500.plotAveragePolePosMin();
 lgd = legend('50 Iterations','100 Iterations', '250 Iterations', '500 Iterations', '2500 Iterations');
 lgd.FontSize = 14;
 xlabel("Time (s)", 'FontSize', 14)
@@ -83,31 +140,38 @@ ylabel("Time to Failure (s)")
 %% Box Plots
 fignum = fignum + 1;
 figure(fignum)
-Model50.plotBoxplotPos(1);
+Model50.plotBoxplotPolePos(1);
+xlabel("Time (s)", 'FontSize', 14)
+ylabel("Pole Angle (radians)", 'FontSize', 14)
+
+fignum = fignum + 1;
+figure(fignum)
+Model50.plotBoxplotCartPos(1);
+xlabel("Time (s)", 'FontSize', 14)
+ylabel("Cart Position (m)", 'FontSize', 14)
+title('Cart Position Model 50', 'FontSize', 14)
+%%
+fignum = fignum + 1;
+figure(fignum)
+Model100.plotBoxplotPolePos(1);
 xlabel("Time (s)", 'FontSize', 14)
 ylabel("Pole Angle (radians)", 'FontSize', 14)
 %%
 fignum = fignum + 1;
 figure(fignum)
-Model100.plotBoxplotPos(1);
+Model250.plotBoxplotPolePos(1);
 xlabel("Time (s)", 'FontSize', 14)
 ylabel("Pole Angle (radians)", 'FontSize', 14)
 %%
 fignum = fignum + 1;
 figure(fignum)
-Model250.plotBoxplotPos(1);
+Model500.plotBoxplotPolePos(1);
 xlabel("Time (s)", 'FontSize', 14)
 ylabel("Pole Angle (radians)", 'FontSize', 14)
 %%
 fignum = fignum + 1;
 figure(fignum)
-Model500.plotBoxplotPos(1);
-xlabel("Time (s)", 'FontSize', 14)
-ylabel("Pole Angle (radians)", 'FontSize', 14)
-%%
-fignum = fignum + 1;
-figure(fignum)
-Model2500.plotBoxplotPos(1);
+Model2500.plotBoxplotPolePos(1);
 xlabel("Time (s)", 'FontSize', 14)
 ylabel("Pole Angle (radians)", 'FontSize', 14)
 
